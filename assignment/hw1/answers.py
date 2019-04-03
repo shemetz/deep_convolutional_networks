@@ -10,14 +10,9 @@ math (delimited with $$).
 
 part2_q1 = r"""
 **Your answer:**
-
-
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
+We can see from the graph we got that increasing ```k``` didn't lead to improved generalization for unseen data.
+This is an example of the bias-variance tradeoff. Low values of ```k``` yield in classifiers that are more commited to memory
+and therefore overfit. High values underfit. Therefore, the middle values are the best.
 
 """
 # ==============

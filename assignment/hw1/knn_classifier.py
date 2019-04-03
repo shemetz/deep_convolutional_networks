@@ -53,7 +53,16 @@ class KNNClassifier(object):
             # - Set y_pred[i] to the most common class among them
 
             # ====== YOUR CODE: ======
-            raise NotImplementedError()
+            row_i = np.array(dist_matrix[i])
+            #k_neighbors_indices = row_i.argsort()[:self.k]
+            #print (k_neighbors_indices)
+            idx = np.argpartition(row_i, self.k)
+            k_neighbors_indices = idx[:self.k]
+            #print (k_neighbors_indices)
+            labels = self.y_train[k_neighbors_indices]
+            #print (labels)
+            y_pred[i] = np.argmax(np.bincount(labels)).item()
+            #print(y_pred[i])
             # ========================
 
         return y_pred
@@ -80,7 +89,10 @@ class KNNClassifier(object):
 
         dists = torch.tensor([])
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        x_norm = (x_test**2).sum(1).view(-1, 1) # x_test^2
+        y_t = torch.transpose(self.x_train, 0, 1) # x_train^t
+        y_norm = (self.x_train**2).sum(1).view(1, -1) # x_train^2
+        dists = x_norm + y_norm - 2.0 * torch.mm(x_test, y_t) # (x_test - x_train)^2 = x_test^2 - 2*x_test*x_train + x_train^2
         # ========================
 
         return dists
@@ -101,7 +113,9 @@ def accuracy(y: Tensor, y_pred: Tensor):
 
     accuracy = None
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    diff = y - y_pred
+    non_equal = np.count_nonzero(diff)
+    accuracy = 1 - non_equal / len(diff)
     # ========================
 
     return accuracy
@@ -131,7 +145,18 @@ def find_best_k(ds_train: Dataset, k_choices, num_folds):
         # different split each iteration), or implement something else.
 
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        accuracy_k = []
+        for j in range(num_folds):
+            validation_ratio = 1.0 / (num_folds - 0)
+            dl_train, dl_valid = dataloaders.create_train_validation_loaders(ds_train, validation_ratio)
+            #x_train, y_train = dataloader_utils.flatten(dl_train)
+            x_valid, y_valid = dataloader_utils.flatten(dl_valid)
+            model.train(dl_train)
+            y_pred = model.predict(x_valid)
+            acc = accuracy(y_valid, y_pred)
+            #print ("appending accuracy of " + str(acc))
+            accuracy_k.append(acc)
+        accuracies.append(accuracy_k)
         # ========================
 
     best_k_idx = np.argmax([np.mean(acc) for acc in accuracies])

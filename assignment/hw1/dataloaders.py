@@ -29,7 +29,27 @@ def create_train_validation_loaders(dataset: Dataset, validation_ratio,
     #    from the dataset.
 
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    num_train = len(dataset)
+    indices = list(range(num_train))
+    split = int(np.floor(validation_ratio * num_train))
+    
+    # the validation set is the first (validation_ratio * total number of samples) samples
+    valid_dataset = []
+    for i in range(split):
+        valid_dataset.append(dataset[i])
+    
+    # create samplers
+    train_idx, valid_idx = indices[split:], indices[:split]
+    train_sampler = sampler.SubsetRandomSampler(train_idx) # random samples
+    valid_sampler = sampler.SubsetRandomSampler(valid_idx) # random samples
+    
+    # create the loaders, simply using the given arguments
+    dl_train = torch.utils.data.DataLoader(
+        dataset, batch_size=batch_size, sampler=train_sampler,
+        num_workers=num_workers,)
+    dl_valid = torch.utils.data.DataLoader(
+        valid_dataset, batch_size=batch_size, sampler=valid_sampler,
+        num_workers=num_workers,)
     # ========================
 
     return dl_train, dl_valid
