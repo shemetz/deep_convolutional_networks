@@ -106,7 +106,13 @@ class LinearClassifier(object):
             average_loss = 0
 
             # ====== YOUR CODE: ======
-            raise NotImplementedError()
+            
+            for local_batch, local_labels in dl_train:
+                y_pred, x_scores = self.predict(local_batch)
+                loss = loss_fn(x, y, x_scores, y_pred) + 0.5 * weight_decay * torch.sum(torch.mm(self.weights, self.weights))
+                grad = loss_fn.grad() + weight_decay * self.weights
+                self.weights -= learn_rate * grad
+            
             # ========================
             print('.', end='')
 
@@ -126,7 +132,11 @@ class LinearClassifier(object):
         # The output shape should be (n_classes, C, H, W).
 
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        w = self.weights
+        if has_bias:
+            w = torch.reshape(w, (-1,))
+            w = w[torch.arange(len(w) - 1)]
+        w = torch
         # ========================
 
         return w_images

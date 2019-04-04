@@ -56,15 +56,14 @@ class SVMHingeLoss(ClassifierLoss):
         loss = None
         # ====== YOUR CODE: ======
         num_train = x.shape[0]
+        j = torch.arange(num_train)
         scores_y_i = x_scores.gather(1, y.unsqueeze(1)) # s_{y_i}
         mat = scores_y_i.repeat(1, x_scores.shape[1]) # matrix where row i is s_{y_i}
         M = x_scores - mat + self.delta
         zeros = torch.zeros(M.shape)
         margins = torch.max(zeros, M) # max{0, s_j - s_{y_i} + delta}
         fix = torch.zeros(num_train)
-        j = torch.arange(num_train)
         margins[j, y] = fix # fix values for j = y_i (set to 0)
-        #print (margins)
         loss = torch.sum(margins) / num_train # calculate average
         # ========================
 
@@ -90,12 +89,12 @@ class SVMHingeLoss(ClassifierLoss):
         x = self.grad_ctx['x']
         y = self.grad_ctx['y']
         num_train = self.grad_ctx['num_train']
-        binary = margins
-        binary[margins > 0] = 1
-        row_sum = torch.sum(binary, 1)
-        binary[torch.arange(num_train), y] = -torch.t(row_sum)
-        grad = torch.dot(torch.t(x), binary)
-        grad /= num_train
+        G = margins
+        G[margins > 0] = 1 # G holds 1 where margins is greater than 0
+        row_sum = torch.sum(G, 1)
+        G[torch.arange(num_train), y] = -row_sum # The sum should ignore the right classification
+        grad = torch.mm(torch.t(x), G) # X^T * G
+        grad /= num_train # Should normalizie
         #dW += reg*W
         # ========================
 
