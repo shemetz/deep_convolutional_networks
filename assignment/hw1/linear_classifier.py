@@ -113,6 +113,8 @@ class LinearClassifier(object):
                 grad = loss_fn.grad() + weight_decay * self.weights
                 self.weights -= learn_rate * grad
             
+            for local_batch, local_labels in dl_valid:
+                
             # ========================
             print('.', end='')
 

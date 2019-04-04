@@ -30,14 +30,12 @@ class RandomImageDataset(Dataset):
         # RNG state outside this method.
 
         # ====== YOUR CODE: ======
-        # (with bonus)
-        old_state = torch.random.get_rng_state()
-        torch.random.manual_seed(index)
-        x = torch.empty(*self.image_dim).uniform_(0, 1)  # random image
-        y = np.random.random_integers(0, self.num_classes - 1)  # label the image
-        torch.random.set_rng_state(old_state)
+        #x = torch.empty(*(self.image_dim)).uniform_(0, 1) # random image
+        #y = np.random.random_integers(0, self.num_classes - 1) # label the image
+        rng = np.random.RandomState(seed=index)
+        y = rng.randint(0, self.num_classes-1)
+        x = torch.from_numpy(rng.randint(low=0, high=255, size=self.image_dim, dtype=np.int16))
         return x, y
-
         # ========================
 
     def __len__(self):
