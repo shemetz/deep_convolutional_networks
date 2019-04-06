@@ -106,15 +106,33 @@ class LinearClassifier(object):
             average_loss = 0
 
             # ====== YOUR CODE: ======
-            
+            loss_curr = 0
+            total_samples = 0
             for local_batch, local_labels in dl_train:
                 y_pred, x_scores = self.predict(local_batch)
-                loss = loss_fn(x, y, x_scores, y_pred) + 0.5 * weight_decay * torch.sum(torch.mm(self.weights, self.weights))
+                loss = loss_fn(local_batch, local_labels, x_scores, y_pred) + 0.5 * weight_decay * (self.weights.norm() ** 2)
                 grad = loss_fn.grad() + weight_decay * self.weights
                 self.weights -= learn_rate * grad
+                total_correct += (local_labels == y_pred).sum().item()
+                loss_curr += loss.item()
+                total_samples += local_batch.shape[0]
+            train_res.accuracy.append(total_correct / total_samples)
+            train_res.loss.append(loss_curr / total_samples)
             
+            total_correct = 0
+            total_samples = 0
+            loss_curr = 0
             for local_batch, local_labels in dl_valid:
-                
+                y_pred, scores = self.predict(local_batch)
+                # loss/grad with regularization term added
+                loss = loss_fn(local_batch, local_labels, x_scores, y_pred) + 0.5 * weight_decay * (self.weights.norm() ** 2)
+                # not updating weights, because this is the validation set
+                total_correct += (local_labels == y_pred).sum().item()
+                loss_curr += loss.item()
+                total_samples += local_batch.shape[0]
+
+            valid_res.accuracy.append(total_correct / total_samples)
+            valid_res.loss.append(loss_curr / total_samples)
             # ========================
             print('.', end='')
 
@@ -134,11 +152,8 @@ class LinearClassifier(object):
         # The output shape should be (n_classes, C, H, W).
 
         # ====== YOUR CODE: ======
-        w = self.weights
-        if has_bias:
-            w = torch.reshape(w, (-1,))
-            w = w[torch.arange(len(w) - 1)]
-        w = torch
+        weights = self.weights[0:-1,:] if has_bias else self.weights # exclude bias if there is
+        w_images = weights.reshape(-1, *img_shape)
         # ========================
 
         return w_images

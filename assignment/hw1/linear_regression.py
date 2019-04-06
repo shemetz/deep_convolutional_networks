@@ -49,7 +49,7 @@ class LinearRegressor(BaseEstimator, RegressorMixin):
         w_opt = None
         # ====== YOUR CODE: ======
         Xt = np.transpose(X)
-        XtX_lambda = np.dot(Xt,X) + self.reg_lambda
+        XtX_lambda = np.dot(Xt,X) + self.reg_lambda * np.eye(X.shape[1])
         Xty = np.dot(Xt,y)
         w_opt = np.linalg.solve(XtX_lambda, Xty)
         # ========================
@@ -93,7 +93,7 @@ class BostonFeaturesTransformer(BaseEstimator, TransformerMixin):
         # TODO: Your custom initialization, if needed
         # Add any hyperparameters you need and save them as above
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        # Nothing to implement
         # ========================
 
     def fit(self, X, y=None):
@@ -115,7 +115,8 @@ class BostonFeaturesTransformer(BaseEstimator, TransformerMixin):
 
         X_transformed = None
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        X_polyFeat = PolynomialFeatures(self.degree)
+        X_transformed = X_polyFeat.fit_transform(X)
         # ========================
 
         return X_transformed
@@ -176,7 +177,53 @@ def cv_best_hyperparams(model: BaseEstimator, X, y, k_folds,
     # - You can use MSE or R^2 as a score.
 
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    best_params = None
+    best_accr = -1
+    for degree in degree_range:
+        for lambda_ in lambda_range:
+            # create the hyper-parameters for the model
+            params = dict(linearregressor__reg_lambda=lambda_, bostonfeaturestransformer__degree=degree)
+
+            # set the model parameters
+            model.set_params(**params)
+
+            # k-fold split
+            kf = sklearn.model_selection.KFold(n_splits=k_folds)
+
+            accuracy = 0
+            for train_idx, test_idx in kf.split(X):
+                # get the train and test sets
+                train_X, train_y = X[train_idx], y[train_idx]
+                test_X, test_y = X[test_idx], y[test_idx]
+
+                # train the model
+                model.fit(train_X, train_y)
+
+                # get accuracy of the fold
+                y_pred = model.predict(test_X)
+                mse, _ = evaluate_accuracy(y=test_y, y_pred=y_pred)
+
+                # accumulate the mse of the folds
+                accuracy += mse
+
+            # if it's the first time calculating the accuracy just take it as it as
+            if best_accr < 0:
+                best_params = params
+                best_accr = accuracy
+            else:
+                best_params = best_params if accuracy > best_accr else params
+                best_accr = min(accuracy, best_accr)
     # ========================
 
     return best_params
+
+def evaluate_accuracy(y: np.ndarray, y_pred: np.ndarray):
+    """
+    Calculates mean squared error (MSE) and coefficient of determination (R-squared).
+    :param y: Target values.
+    :param y_pred: Predicted values.
+    :return: A tuple containing the MSE and R-squared values.
+    """
+    mse = np.mean((y - y_pred) ** 2)
+    rsq = 1 - mse / np.var(y)
+    return mse.item(), rsq.item()

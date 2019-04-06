@@ -145,17 +145,37 @@ def find_best_k(ds_train: Dataset, k_choices, num_folds):
         # different split each iteration), or implement something else.
 
         # ====== YOUR CODE: ======
-        accuracy_k = []
+        # First attempt, don't delete, might be useful
+        # accuracy_k = []
+        # for j in range(num_folds):
+        #     validation_ratio = 1.0 / (num_folds - 0)
+        #     dl_train, dl_valid = dataloaders.create_train_validation_loaders(ds_train, validation_ratio)
+        #     #x_train, y_train = dataloader_utils.flatten(dl_train)
+        #     x_valid, y_valid = dataloader_utils.flatten(dl_valid)
+        #     model.train(dl_train)
+        #     y_pred = model.predict(x_valid)
+        #     acc = accuracy(y_valid, y_pred)
+        #     #print ("appending accuracy of " + str(acc))
+        #     accuracy_k.append(acc)
+        # accuracies.append(accuracy_k)
+        
+        accuracy_k = np.zeros(num_folds)
+        fold_length = len(ds_train) // num_folds
+        
+        # Split to folds indices
+        folds = [list(range(fold_length * j, fold_length * (j + 1))) for j in range(num_folds - 1)]
+        folds.append(list(range(fold_length * (num_folds - 1), len(ds_train))))
+        
         for j in range(num_folds):
-            validation_ratio = 1.0 / (num_folds - 0)
-            dl_train, dl_valid = dataloaders.create_train_validation_loaders(ds_train, validation_ratio)
-            #x_train, y_train = dataloader_utils.flatten(dl_train)
-            x_valid, y_valid = dataloader_utils.flatten(dl_valid)
+            # train on current training set
+            train_fold_j = sum(folds[:j] + folds[j + 1:], [])
+            dl_train = DataLoader(torch.utils.data.Subset(ds_train, train_fold_j))
             model.train(dl_train)
-            y_pred = model.predict(x_valid)
-            acc = accuracy(y_valid, y_pred)
-            #print ("appending accuracy of " + str(acc))
-            accuracy_k.append(acc)
+            
+            # evaluate on current validation set
+            dl_valid = DataLoader(torch.utils.data.Subset(ds_train, folds[j]))
+            x_valid, y_valid = dataloader_utils.flatten(dl_valid)
+            accuracy_k[j] = accuracy(y_valid, model.predict(x_valid))
         accuracies.append(accuracy_k)
         # ========================
 
